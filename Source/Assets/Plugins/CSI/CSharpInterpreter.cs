@@ -73,6 +73,7 @@ public sealed class CSharpInterpreter : MonoBehaviour, CSI.IConsole
     private static CSI.Interpreter csharpEngine;
     private CSI.Interpreter.InputHandler inputHandler;
     private Assembly unityEditorAssembly;
+	private Assembly unityUIAssembly;
     private List<string> inputTextCache;
     private List<string> inputTextHistory;
 
@@ -352,6 +353,20 @@ public sealed class CSharpInterpreter : MonoBehaviour, CSI.IConsole
                         // Skip problematic assemblies
                     }
                 }
+if(this.unityUIAssembly == null)
+				{
+					try
+					{
+						if (assembly.FullName.StartsWith("UnityEngine.UI,", StringComparison.OrdinalIgnoreCase) == true)
+						{
+						this.unityUIAssembly = assembly;
+						}
+					}
+						catch
+						{
+						// Skip problematic assemblies
+						}
+				}
 
                 if ((this.unityEditorAssembly != null) &&
                     (unityEngineAssembly != null))
@@ -412,7 +427,20 @@ public sealed class CSharpInterpreter : MonoBehaviour, CSI.IConsole
                     this.unityEditorAssembly = null;
                 }
             }
-
+			if (this.unityUIAssembly != null)
+			{
+				string filename = GetFullPathOfAssembly(this.unityUIAssembly);
+				if (File.Exists(filename))
+				{
+					csharpEngine.AddReference(filename);
+					csharpEngine.AddNamespace("UnityEngine.UI");
+				}
+				else
+					this.unityUIAssembly = null;
+			}
+			if (this.unityUIAssembly == null)
+				Debug.LogWarning("UnityEngine.UI is not referenced!");
+				
             if ((this.unityEditorAssembly == null)
                 && Application.isEditor)
             {
